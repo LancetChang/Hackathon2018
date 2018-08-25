@@ -12,7 +12,7 @@
 
 
 <div style="width: 640px; height: 480px" id="mapContainer"></div>
-<br/>
+<br />
 <div style="width: 640px; height: 480px" id="mapNavigator"></div>
 <script src="http://js.api.here.com/v3/3.0/mapsjs-core.js"
         type="text/javascript" charset="utf-8"></script>
@@ -25,15 +25,6 @@
 <link rel="stylesheet" type="text/css"
       href="http://js.api.here.com/v3/3.0/mapsjs-ui.css" />
 <script>
-	/*
-	 <div>
-    @foreach(var obj in Model) 
-    {
-        <li>Name:-    @obj.Address</li>
-    }
-	    </div>
-
-	 */
 
 	var center = {
 	    lat: 25.04885,
@@ -51,6 +42,7 @@
 	var dataPosition = [];
 	var markerLocations = [];
 	var markerContainer = [];
+    var bubbleContainer = [];
 
     // Initialize the platform object:
     var platform = new H.service.Platform({
@@ -69,6 +61,7 @@
             zoom: oldMapZoom,
             center: { lng: center.lng, lat: center.lat }
         });
+
 	var mapEvents = new H.mapevents.MapEvents(restaurantMap);
 	var behavior = new H.mapevents.Behavior(mapEvents);
 	// Create the default UI:
@@ -83,10 +76,20 @@
 	    center.lat = nowMapCenter.lat;
 	});
 
+    function ClearBubble(address) {
+        for(i = 0; i < bubbleContainer.length; ++i)
+        {
+            bubbleContainer[i].close();
+            bubbleContainer.shift();
+            --i;
+        }
+    }
+
 	// Add event listener:
 	restaurantMap.addEventListener('pointerup', function(evt) {
 	    // Log 'dragend' and 'mouse' events:
-	    
+	    ClearBubble();
+    
 		if (evt.target.type == 3) {
 		    console.log(evt.type, evt.target.getPosition());
 		    console.log(markerContainer.length);
@@ -110,8 +113,11 @@
 
             // Add info bubble to the UI:
 		    ui.addBubble(bubble);
+            bubbleContainer.push(bubble);
 		}
+        
 	});
+
 
 	restaurantMap.addEventListener('mapviewchangeend', function() {
 	    oldMapZoom = restaurantMap.getZoom(); 
@@ -199,7 +205,7 @@
     };
 
     // alert('@Model[1].Address');
-    
+
     @foreach (var d in Model)
     {
         @:dataAddress.push('@d.Address');
@@ -210,7 +216,7 @@
         @:lng:0,
 		@:lat:0
         @:};
-        
+
         @:position.lng = '@d.Longitude';
         @:position.lat = '@d.Latitude';
 
@@ -219,7 +225,10 @@
     }
 	
     function RefreshMarker() {
+        markerLocations = [];
+        dataPosition.sort(function(a, b){return 0.5 - Math.random()});
         for (i = 0; i < dataPosition.length; ++i) {
+
             //alert(dataPosition[i].lat);
             //alert(dataPosition[i].lng);
 
@@ -232,12 +241,13 @@
                 parseFloat(dataPosition[i].lat) + magicNumber > center.lat &&
                 parseFloat(dataPosition[i].lat) - magicNumber < center.lat) {
 
-				if(markerLocations.length < maxMarker)
-				{
-				    markerLocations.push(dataPosition[i]);
-			    }
+				markerLocations.push(dataPosition[i]);
             }
 
+            if(markerLocations.length > maxMarker)
+            {
+                break;
+            }
         }
 
         console.log(dataPosition.length);
@@ -252,7 +262,6 @@
 
         // Add a marker for each location found
         for (i = 0; i < markerLocations.length; i++) {
-
             // marker = new H.map.Marker(position);
             var icon = new H.map.Icon(svgMarkup),
                 marker = new H.map.Marker(markerLocations[i], { icon: icon });
